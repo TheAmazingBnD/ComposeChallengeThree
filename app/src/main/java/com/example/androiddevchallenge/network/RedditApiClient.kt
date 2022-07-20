@@ -2,16 +2,11 @@ package com.example.androiddevchallenge.network
 
 import com.jakewharton.retrofit2.adapter.kotlin.coroutines.CoroutineCallAdapterFactory
 import com.jakewharton.retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory
-import io.reactivex.BackpressureStrategy
-import io.reactivex.Observable
-import kotlinx.coroutines.flow.Flow
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
-import java.util.*
 import java.util.concurrent.TimeUnit
-import kotlinx.coroutines.reactive.asFlow
 
 class RedditApiClient {
 
@@ -26,7 +21,7 @@ class RedditApiClient {
             .readTimeout(30, TimeUnit.SECONDS)
             .connectTimeout(30, TimeUnit.SECONDS)
             .addInterceptor(HeaderInterceptor())
-            .addInterceptor(LoggingIntercepter())
+            .addInterceptor(LoggingInterceptor())
             .addInterceptor(httpLoggingInterceptor)
             .build()
 
@@ -41,7 +36,7 @@ class RedditApiClient {
         apiService = retrofitInstance.create(RedditService::class.java)
     }
 
-    fun getBaseApiUrl(): String {
+    private fun getBaseApiUrl(): String {
         return "https://www.reddit.com/"
     }
 

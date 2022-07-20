@@ -15,16 +15,16 @@ class RedditPostViewModel(private val apiClient: RedditApiClient = RedditApiClie
 
     data class ViewState(
         val progressType: ProgressType,
-        val comments: MutableStateFlow<List<ApiRedditCommentPost>>,
-        val post: MutableStateFlow<ApiRedditPost>,
+        val comments: List<ApiRedditCommentPost>,
+        val post: ApiRedditPost,
         val commentCount: Int
     )
 
     private val viewState = MutableStateFlow(
         ViewState(
             progressType = ProgressType.NotAsked,
-            comments = MutableStateFlow(emptyList()),
-            post = MutableStateFlow(ApiRedditPost()),
+            comments = emptyList(),
+            post = ApiRedditPost(),
             commentCount = 0
         )
     )
@@ -32,13 +32,14 @@ class RedditPostViewModel(private val apiClient: RedditApiClient = RedditApiClie
     fun fetchPage(permalink: String) {
         viewModelScope.launch {
             updateState(
-                currentViewState.copy(
+                currentViewState.value.copy(
                     progressType = ProgressType.Loading
                 )
             )
             val response = apiClient.getApiService()
                 .getPage(permalink)
             flowOf(response)
+                .distinctUntilChanged()
                 .collect {
                     when {
                         it.isSuccessful -> {
@@ -47,27 +48,26 @@ class RedditPostViewModel(private val apiClient: RedditApiClient = RedditApiClie
                                 postPageWrapper.let { listOfPostData ->
                                     var redditPost = ApiRedditPost()
 
-                                    postPageWrapper.first().data?.children?.forEach { post ->
+                                    listOfPostData.first().data?.children?.forEach { post ->
                                         redditPost = post.toRedditPost()
                                     }
 
-                                    val comments = currentViewState.comments.value.plus(
-                                        postPageWrapper[1]
+                                    val comments = currentViewState.value.comments.plus(
+                                        listOfPostData[1]
                                         .data?.children ?: emptyList()
                                     )
 
-                                    currentViewState.comments.value = comments
-
                                     updateState(
-                                        currentViewState.copy(
+                                        currentViewState.value.copy(
                                             progressType = ProgressType.Result(listOfPostData),
-                                            post = MutableStateFlow(redditPost),
+                                            post = redditPost,
+                                            comments = comments,
                                             commentCount = comments.size
                                         )
                                     )
                                 }
                             } ?: updateState(
-                                currentViewState.copy(
+                                currentViewState.value.copy(
                                     progressType = ProgressType.Failure(it)
                                 )
                             )
@@ -75,7 +75,7 @@ class RedditPostViewModel(private val apiClient: RedditApiClient = RedditApiClie
                         }
                         else -> {
                             updateState(
-                                currentViewState.copy(
+                                currentViewState.value.copy(
                                     progressType = ProgressType.Failure(it)
                                 )
                             )
@@ -86,10 +86,10 @@ class RedditPostViewModel(private val apiClient: RedditApiClient = RedditApiClie
         }
     }
 
-    val currentViewState: ViewState = viewState.value
+    val currentViewState = viewState
 
     private fun updateState(newState: ViewState) {
-        viewState.value = currentViewState
+        viewState.value = currentViewState.value
             .copy(
                 progressType = newState.progressType,
                 comments = newState.comments,

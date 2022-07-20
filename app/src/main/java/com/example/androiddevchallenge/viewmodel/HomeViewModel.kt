@@ -38,7 +38,7 @@ class HomeViewModel(
         fetchHomePage()
     }
 
-    fun fetchHomePage() {
+    private fun fetchHomePage() {
         updateState(
             currentViewState.copy(
                 progressType = ProgressType.Loading
@@ -48,6 +48,7 @@ class HomeViewModel(
             val response = apiClient.getApiService()
                 .getHomePage()
             flowOf(response)
+                .distinctUntilChanged()
                 .collect {
                     when {
                         it.isSuccessful -> {

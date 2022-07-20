@@ -6,12 +6,15 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.androiddevchallenge.home.Home
@@ -20,26 +23,37 @@ import com.example.androiddevchallenge.network.models.data.ApiRedditCommentPost
 import com.example.androiddevchallenge.redditposts.*
 import com.example.androiddevchallenge.redditposts.RedditPostListItem
 import com.example.androiddevchallenge.viewmodel.RedditPostViewModel
+import java.lang.Float.min
 
 @Composable
 @OptIn(ExperimentalMaterialApi::class)
-fun RedditPostBottomSheetLayout(darkTheme: Boolean, link: String, navigateUp: () -> Unit) {
+fun RedditPostPage(darkTheme: Boolean, link: String, navigateUp: () -> Unit) {
     val redditPostViewModel: RedditPostViewModel = viewModel()
     redditPostViewModel.fetchPage(link)
-    val comments = redditPostViewModel.currentViewState.comments.collectAsState()
-    val post = redditPostViewModel.currentViewState.post.collectAsState()
+    val currentState = redditPostViewModel.currentViewState.collectAsState()
+    val scrollState = rememberScrollState()
 
-    RedditPostListItem(
-        post = post.value,
-        openRedditPost = { },
-    )
-    Divider(
-        modifier = Modifier.background(Color.White)
-    )
-    RedditCommentList(
-        posts = comments.value,
-        openRedditPost = {}
-    ) { }
+    Column {
+        RedditPostListItem(
+            modifier = Modifier.graphicsLayer {
+                //alpha = min(1f, 1 - (scrollState.value / 600f))
+                //translationY = -scrollState.value * 0.1f
+            },
+            post = currentState.value.post,
+            openRedditPost = { },
+        )
+        Divider(
+            modifier = Modifier.background(Color.White)
+        )
+        Column(
+           //modifier = Modifier.verticalScroll(scrollState)
+        ) {
+            RedditCommentList(
+                posts = currentState.value.comments,
+                openRedditPost = {}
+            ) { }
+        }
+    }
 }
 
 @Composable
@@ -49,21 +63,21 @@ fun RedditCommentList(
     openRedditPost: (String) -> Unit,
     loadMore: () -> Unit
 ) {
-    Surface(
-        shape = RoundedCornerShape(4.dp),
-        modifier = modifier,
+
+    val listState = rememberLazyListState()
+
+    LazyColumn(
+        modifier
+            .fillMaxWidth(),
+        listState
     ) {
-        val listState = rememberLazyListState()
-
-        LazyColumn(modifier.fillMaxWidth(), listState) {
-            items(posts) { post ->
-                RedditCommentItem(modifier, post, openRedditPost)
-            }
+        items(posts) { post ->
+            RedditCommentItem(modifier, post, openRedditPost)
         }
+    }
 
-        listState.InfiniteListHandler {
-            loadMore()
-        }
+    listState.InfiniteListHandler {
+        loadMore()
     }
 }
 

@@ -5,7 +5,7 @@ import okhttp3.Interceptor
 import okhttp3.Response
 import java.io.IOException
 
-class LoggingIntercepter : Interceptor {
+class LoggingInterceptor : Interceptor {
 
     @Throws(IOException::class)
     override fun intercept(chain: Interceptor.Chain): Response {
@@ -17,9 +17,9 @@ class LoggingIntercepter : Interceptor {
             TAG,
             String.format(
                 "Sending request %s on %s%n%s",
-                request.url(),
+                request.url,
                 chain.connection(),
-                request.headers()
+                request.headers
             )
         )
 
@@ -31,9 +31,9 @@ class LoggingIntercepter : Interceptor {
             TAG,
             String.format(
                 "Received response for %s in %.1fms%n%s",
-                response.request().url(),
+                response.request.url,
                 (time2 - time1) / 1e6,
-                response.headers()
+                response.headers
             )
         )
 
@@ -41,6 +41,6 @@ class LoggingIntercepter : Interceptor {
     }
 
     companion object {
-        private val TAG = LoggingIntercepter::class.java.simpleName
+        private val TAG = LoggingInterceptor::class.java.simpleName
     }
 }
